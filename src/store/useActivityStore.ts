@@ -12,6 +12,7 @@ interface ActivityState {
   setFilter: (filter: ActivityStatusFilter) => void;
   setUserPhone: (phone: string) => void;
   createActivity: (data: Omit<Activity, 'id' | 'createdAt'>) => Promise<ActivityWithRegistrations>;
+  updateActivity: (id: string, data: Partial<Omit<Activity, 'id' | 'createdAt'>>) => Promise<ActivityWithRegistrations>;
   registerForActivity: (id: string, userName: string, userPhone: string) => Promise<void>;
   cancelRegistration: (activityId: string, registrationId: string) => Promise<void>;
 }
@@ -44,6 +45,16 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
     const newActivity = await activityApi.create(data);
     set({ activities: [newActivity, ...get().activities] });
     return newActivity;
+  },
+
+  updateActivity: async (id, data) => {
+    const updatedActivity = await activityApi.update(id, data);
+    set({
+      activities: get().activities.map((a) =>
+        a.id === id ? updatedActivity : a
+      ),
+    });
+    return updatedActivity;
   },
 
   registerForActivity: async (id, userName, userPhone) => {

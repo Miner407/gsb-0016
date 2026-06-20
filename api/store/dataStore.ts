@@ -48,12 +48,19 @@ class DataStore {
     return this.withRegistrations(activity);
   }
 
-  updateActivity(id: string, data: Partial<Omit<Activity, 'id' | 'createdAt'>>): ActivityWithRegistrations | null {
+  updateActivity(id: string, data: Partial<Omit<Activity, 'id' | 'createdAt'>>): { success: boolean; data?: ActivityWithRegistrations; error?: string } {
     const existing = this.activities.get(id);
-    if (!existing) return null;
+    if (!existing) return { success: false, error: '活动不存在' };
+    const registrations = this.getRegistrationsByActivityId(id);
+    if (data.maxParticipants !== undefined && data.maxParticipants < registrations.length) {
+      return {
+        success: false,
+        error: `人数上限不能低于已报名人数（${registrations.length} 人）`,
+      };
+    }
     const updated: Activity = { ...existing, ...data };
     this.activities.set(id, updated);
-    return this.withRegistrations(updated);
+    return { success: true, data: this.withRegistrations(updated) };
   }
 
   deleteActivity(id: string): boolean {
@@ -86,12 +93,12 @@ class DataStore {
       return { success: false, error: '活动已结束，无法报名' };
     }
     const registrations = this.getRegistrationsByActivityId(activityId);
-    if (registrations.length >= activity.maxParticipants) {
-      return { success: false, error: '活动名额已满' };
-    }
     const existing = registrations.find((r) => r.userPhone === userPhone);
     if (existing) {
       return { success: false, error: '您已报名该活动' };
+    }
+    if (registrations.length >= activity.maxParticipants) {
+      return { success: false, error: '活动名额已满' };
     }
     const registration: Registration = {
       id: this.generateId(),

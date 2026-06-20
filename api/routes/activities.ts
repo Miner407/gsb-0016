@@ -34,11 +34,11 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 router.put('/:id', (req: Request, res: Response) => {
-  const updated = dataStore.updateActivity(req.params.id, req.body);
-  if (!updated) {
-    return res.status(404).json({ success: false, error: '活动不存在' });
+  const result = dataStore.updateActivity(req.params.id, req.body);
+  if (!result.success) {
+    return res.status(400).json({ success: false, error: result.error });
   }
-  res.json({ success: true, data: updated });
+  res.json({ success: true, data: result.data });
 });
 
 router.delete('/:id', (req: Request, res: Response) => {

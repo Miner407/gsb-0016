@@ -9,6 +9,8 @@ import {
   Phone,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
+  Edit3,
 } from 'lucide-react';
 import type { ActivityWithRegistrations, Registration } from '@shared/types';
 import {
@@ -25,11 +27,13 @@ interface Props {
 
 export default function ActivityDetail({ activity, onClose }: Props) {
   const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [userName, setUserName] = useState('');
   const [userPhone, setUserPhone] = useState(useActivityStore.getState().userPhone);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
 
   const { registerForActivity, cancelRegistration, setUserPhone: storeSetUserPhone } = useActivityStore();
 
@@ -61,10 +65,13 @@ export default function ActivityDetail({ activity, onClose }: Props) {
 
   const handleCancel = async () => {
     if (!myRegistration) return;
-    if (!confirm('确定要取消报名吗？')) return;
     setLoading(true);
+    setError(null);
     try {
       await cancelRegistration(activity.id, myRegistration.id);
+      setShowCancelConfirm(false);
+      setCancelSuccess(true);
+      setTimeout(() => setCancelSuccess(false), 2000);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -92,6 +99,16 @@ export default function ActivityDetail({ activity, onClose }: Props) {
             <div className="absolute -bottom-20 -left-20 w-50 h-50 rounded-full bg-white/20 blur-2xl" />
           </div>
           <button
+            onClick={() => {
+              onClose();
+              window.location.href = `/edit/${refreshed.id}`;
+            }}
+            className="absolute top-4 right-16 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+            title="编辑活动"
+          >
+            <Edit3 className="w-5 h-5" />
+          </button>
+          <button
             onClick={onClose}
             className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
           >
@@ -114,6 +131,13 @@ export default function ActivityDetail({ activity, onClose }: Props) {
             <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl animate-slide-up">
               <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
               <span className="text-green-700 font-medium">报名成功！</span>
+            </div>
+          )}
+
+          {cancelSuccess && (
+            <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl animate-slide-up">
+              <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />
+              <span className="text-blue-700 font-medium">已取消报名，名额已释放</span>
             </div>
           )}
 
@@ -175,11 +199,11 @@ export default function ActivityDetail({ activity, onClose }: Props) {
             </p>
           </div>
 
-          {!showRegisterForm ? (
+          {!showRegisterForm && !showCancelConfirm ? (
             <div className="flex gap-3 pt-2">
               {myRegistrationNow ? (
-                <button onClick={handleCancel} disabled={loading || isEnded} className="btn-danger flex-1">
-                  {loading ? '处理中...' : '取消报名'}
+                <button onClick={() => setShowCancelConfirm(true)} disabled={loading || isEnded} className="btn-danger flex-1">
+                  取消报名
                 </button>
               ) : (
                 <button
@@ -243,6 +267,30 @@ export default function ActivityDetail({ activity, onClose }: Props) {
                 </button>
               </div>
             </form>
+          )}
+
+          {showCancelConfirm && (
+            <div className="space-y-4 pt-2 animate-slide-up">
+              <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-orange-800 mb-1">确认取消报名？</h3>
+                  <p className="text-sm text-orange-700">取消后您的名额将被释放，如需再次参与需要重新报名。</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={handleCancel} disabled={loading} className="btn-danger flex-1">
+                  {loading ? '处理中...' : '确认取消'}
+                </button>
+                <button
+                  onClick={() => setShowCancelConfirm(false)}
+                  disabled={loading}
+                  className="btn-secondary flex-1"
+                >
+                  我再想想
+                </button>
+              </div>
+            </div>
           )}
 
           <div className="border-t border-gray-100 pt-6">

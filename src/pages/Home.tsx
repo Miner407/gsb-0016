@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Heart, Sparkles, Loader2 } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Heart, Sparkles, Loader2, AlertCircle, Plus } from 'lucide-react';
 import { useActivityStore } from '@/store/useActivityStore';
 import ActivityFilter from '@/components/ActivityFilter';
 import ActivityCard from '@/components/ActivityCard';
@@ -11,6 +11,7 @@ export default function Home() {
   const { activities, loading, error, filter, fetchActivities } = useActivityStore();
   const [selected, setSelected] = useState<ActivityWithRegistrations | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchActivities();
@@ -59,13 +60,33 @@ export default function Home() {
           <p className="text-gray-500">加载活动中...</p>
         </div>
       ) : error ? (
-        <div className="text-center py-20 text-red-500">{error}</div>
+        <div className="text-center py-20">
+          <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-10 h-10 text-red-400" />
+          </div>
+          <p className="text-red-500 text-lg font-medium mb-2">加载失败</p>
+          <p className="text-gray-500 mb-6">{error}</p>
+          <button onClick={fetchActivities} className="btn-primary">
+            重新加载
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
             <Heart className="w-10 h-10 text-gray-300" />
           </div>
-          <p className="text-gray-500 text-lg">暂无活动数据</p>
+          <p className="text-gray-700 text-lg font-medium mb-2">
+            {filter === 'all' ? '暂无活动数据' : `暂无${filter === 'recruiting' ? '招募中' : filter === 'full' ? '已满员' : '已结束'}的活动`}
+          </p>
+          <p className="text-gray-500 mb-6">
+            {filter === 'all' ? '点击右上角「发布活动」创建第一个志愿活动吧' : '试试切换其他筛选条件看看'}
+          </p>
+          {filter === 'all' && (
+            <button onClick={() => navigate('/create')} className="btn-primary">
+              <Plus className="w-4 h-4" />
+              发布活动
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
